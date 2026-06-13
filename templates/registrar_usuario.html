@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registrar Usuario</title>
+</head>
+<body>
+
+<h1>Registrar Usuario</h1>
+
+<form method="POST">
+
+    <label>Nombre:</label>
+    <input type="text" name="nombre" required>
+    <br><br>
+
+    <label>Apellido:</label>
+    <input type="text" name="apellido" required>
+    <br><br>
+
+    <label>Correo:</label>
+    <input type="email" name="correo" required>
+    <br><br>
+
+    <label>Contraseña:</label>
+    <input type="password" name="password" required>
+    <br><br>
+
+    <label>Rol:</label>
+    <select name="id_rol">
+        <option value="1">Administrador</option>
+        <option value="2">Director de Planificación</option>
+        <option value="3">Director Institucional</option>
+        <option value="4">Usuario</option>
+    </select>
+
+    <br><br>
+
+    <button type="submit">
+        Guardar
+    </button>
+
+</form>
+
+</body>
+</html>

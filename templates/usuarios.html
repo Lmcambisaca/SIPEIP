@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Usuarios SIPEIP</title>
+</head>
+<body>
+
+    <h1>Lista de Usuarios</h1>
+
+<a href="/logout"
+   onclick="return confirm('¿Desea cerrar sesión?')">
+   Cerrar Sesión
+</a>
+
+<br><br>
+    
+ <h1>Lista de Usuarios</h1>
+
+<form method="GET">
+
+    <input type="text"
+           name="buscar"
+           placeholder="Buscar nombre o correo">
+
+    <button type="submit">
+        Buscar
+    </button>
+
+
+<label>Estado:</label>
+
+<select name="estado">
+    <option value="">Todos</option>
+    <option value="Activo">Activo</option>
+    <option value="Inactivo">Inactivo</option>
+</select>
+
+<label>Rol:</label>
+
+<select name="rol">
+    <option value="">Todos</option>
+    <option value="Administrador">Administrador</option>
+    <option value="Director de Planificación">Director de Planificación</option>
+    <option value="Director Institucional">Director Institucional</option>
+    <option value="Usuario">Usuario</option>
+</select>
+</form>
+
+</form>
+
+<br>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Correo</th>
+            <th>Estado</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario[0] }}</td>
+            <td>{{ usuario[1] }}</td>
+            <td>{{ usuario[2] }}</td>
+            <td>{{ usuario[3] }}</td>
+            <td>{{ usuario[4] }}</td>
+            <td>{{ usuario[5] }}</td>
+            <td>
+
+    
+</form>
+
+<br>
+    <a href="/editar_usuario/{{ usuario[0] }}">
+        Editar
+    </a>
+    
+    |
+    <a href="/eliminar_usuario/{{ usuario[0] }}"
+onclick="return confirm('¿Está seguro de eliminar este usuario?')">
+    Eliminar
+
+    |
+{% if usuario[4] == 'Activo' %}
+
+
+<a href="/desactivar_usuario/{{ usuario[0] }}"
+   onclick="return confirm('¿Desea desactivar este usuario?')">
+   Desactivar
+</a>
+
+{% else %}
+
+
+<a href="/activar_usuario/{{ usuario[0] }}"
+   onclick="return confirm('¿Desea activar este usuario?')">
+   Activar
+</a>
+
+{% endif %}
+
+</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</body>
+</html>
