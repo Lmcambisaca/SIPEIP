@@ -1,29 +1,128 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login SIPEIP</title>
+
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    body{
+        background-color:#f8f9fa;
+    }
+
+    .login-card{
+        margin-top:80px;
+    }
+
+    .imagen-login{
+        object-fit:cover;
+        height:100%;
+    }
+</style>
+
+
 </head>
+
 <body>
 
-    <h1>Inicio de Sesión</h1>
+<div class="container">
 
-    <form method="POST">
 
-        <label>Correo:</label>
-        <input type="email" name="correo" required>
+<div class="row justify-content-center login-card">
 
-        <br><br>
+    <div class="col-lg-8">
 
-        <label>Contraseña:</label>
-        <input type="password" name="password" required>
+        <div class="card shadow">
 
-        <br><br>
+            <div class="row g-0">
 
-        <button type="submit">
-            Ingresar
-        </button>
+                <div class="col-lg-4 d-none d-lg-block">
 
-    </form>
+                    <img
+                        src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40"
+                        class="img-fluid h-100 imagen-login"
+                        alt="SIPEIP">
+
+                </div>
+
+                <div class="col-lg-8">
+
+                    <div class="card-body p-5">
+
+                        <h2 class="text-center mb-4">
+                            Inicio de Sesión
+                        </h2>
+
+                        <form method="POST">
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Correo Electrónico
+                                </label>
+
+                                <input
+                                    type="email"
+                                    name="correo"
+                                    class="form-control"
+                                    required>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Contraseña
+                                </label>
+
+                                <input
+                                    type="password"
+                                    name="password"
+                                    class="form-control"
+                                    required>
+
+                            </div>
+
+                            <div class="d-grid">
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary">
+
+                                    Ingresar
+
+                                </button>
+
+                            </div>
+
+                            <div class="text-center mt-3">
+
+                                <a href="/recuperar_password">
+                                    ¿Olvidó su contraseña?
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
 
 </body>
 </html>

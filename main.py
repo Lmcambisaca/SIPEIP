@@ -3,6 +3,8 @@ from datetime import timedelta
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+def es_admin():
+    return session.get('id_rol') == 1
 
 
 app = Flask(__name__)
@@ -102,7 +104,13 @@ def listar_usuarios():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 
+    if 'intentos' not in session:
+        session['intentos'] = 0
+
     if request.method == 'POST':
+
+        if session['intentos'] >= 3:
+            return "Cuenta bloqueada temporalmente. Demasiados intentos fallidos."
 
         correo = request.form['correo']
         password = request.form['password']
@@ -118,35 +126,137 @@ def login():
 
         usuario = cursor.fetchone()
 
-        conexion.close()
-
         if usuario and check_password_hash(usuario[4], password):
 
+            # Validar estado de la cuenta
+
+            if usuario[5] != 'Activo':
+                conexion.close()
+                return "La cuenta se encuentra inactiva"
+
+            session['intentos'] = 0
+
             session.permanent = True
+
+            print(usuario)
 
             session['usuario'] = usuario[1]
             session['id_rol'] = usuario[7]
 
+            # Registrar inicio de sesión
+
+            cursor.execute("""
+                INSERT INTO auditoria_sesion(usuario, accion)
+                VALUES(%s,%s)
+            """, (
+                usuario[1],
+                'Inicio de sesión'
+            ))
+
+            conexion.commit()
+            conexion.close()
+
             return redirect('/')
 
         else:
-            return "Correo o contraseña incorrectos"
+
+            conexion.close()
+
+            session['intentos'] += 1
+
+            return f"Correo o contraseña incorrectos. Intento {session['intentos']} de 3"
 
     return render_template('login.html')
 
+# ==========================================
+# cerrar sesion
+# ==========================================
+
 @app.route('/logout')
 def logout():
+
+    usuario = session.get('usuario')
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        INSERT INTO auditoria_sesion
+        (usuario, accion)
+        VALUES (%s, %s)
+    """, (
+        usuario,
+        'Cierre de sesión'
+    ))
+
+    conexion.commit()
+    conexion.close()
 
     session.clear()
 
     return redirect('/login')
 
 # ==========================================
-# REGISTRAR USUARIO
+# RECUPERAR CONTRASEÑA
 # ==========================================
 
+@app.route('/recuperar_password', methods=['GET', 'POST'])
+def recuperar_password():
+
+    if request.method == 'POST':
+
+        correo = request.form['correo']
+        password_actual = request.form['password_actual']
+        password = request.form['password']
+        confirmar = request.form['confirmar']
+
+        if password != confirmar:
+            return "Las contraseñas no coinciden"
+
+        conexion = conectar()
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            SELECT *
+            FROM usuario
+            WHERE correo = %s
+        """, (correo,))
+
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            conexion.close()
+            return "El correo no existe"
+        
+        password_hash = generate_password_hash(password)
+
+        cursor.execute("""
+            UPDATE usuario
+            SET password = %s
+            WHERE correo = %s
+        """, (password_hash, correo))
+        
+        cursor.execute("""
+            INSERT INTO recuperacion_password (correo)
+            VALUES (%s)
+        """, (correo,))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Contraseña actualizada correctamente"
+
+    return render_template('recuperar_password.html')
+
+# ==========================================
+# REGISTRAR USUARIO
+# ==========================================
+ 
 @app.route('/registrar_usuario', methods=['GET', 'POST'])
 def registrar_usuario():
+
+    if not es_admin():
+        return "Acceso denegado"
 
     if request.method == 'POST':
 
@@ -210,9 +320,12 @@ def registrar_usuario():
 
 @app.route('/editar_usuario/<int:id>', methods=['GET', 'POST'])
 def editar_usuario(id):
-
+    
     conexion = conectar()
     cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
 
     if request.method == 'POST':
 
@@ -256,7 +369,6 @@ def editar_usuario(id):
 
         return "Usuario actualizado correctamente"
 
-    # Mostrar datos del usuario
     cursor.execute("""
         SELECT id_usuario,
                nombre,
@@ -282,9 +394,12 @@ def editar_usuario(id):
 
 @app.route('/eliminar_usuario/<int:id>')
 def eliminar_usuario(id):
-
+    
     conexion = conectar()
     cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
 
     cursor.execute(
         "DELETE FROM usuario WHERE id_usuario=%s",
@@ -293,7 +408,7 @@ def eliminar_usuario(id):
 
     conexion.commit()
     conexion.close()
-
+    
     return "Usuario eliminado correctamente"
 
 # ==========================================
@@ -306,14 +421,50 @@ def desactivar_usuario(id):
     conexion = conectar()
     cursor = conexion.cursor()
 
-    cursor.execute(
-        """
+    if not es_admin():
+        return "Acceso denegado"
+
+# Obtener nombre del usuario
+
+    cursor.execute("""
+        SELECT nombre
+        FROM usuario
+        WHERE id_usuario=%s
+    """, (id,))
+
+    usuario = cursor.fetchone()
+
+    if not usuario:
+        conexion.close()
+        return "Usuario no encontrado"
+
+    nombre_usuario = usuario[0]
+
+    # Verificar última actividad
+
+    cursor.execute("""
+        SELECT accion
+        FROM auditoria_sesion
+        WHERE usuario=%s
+        ORDER BY fecha DESC
+        LIMIT 1
+    """, (nombre_usuario,))
+
+    ultima_accion = cursor.fetchone()
+
+    if ultima_accion and ultima_accion[0] == 'Inicio de sesión':
+
+        conexion.close()
+
+        return "No se puede desactivar el usuario porque mantiene una sesión activa."
+
+    # Desactivar usuario
+
+    cursor.execute("""
         UPDATE usuario
         SET estado='Inactivo'
         WHERE id_usuario=%s
-        """,
-        (id,)
-    )
+    """, (id,))
 
     conexion.commit()
     conexion.close()
@@ -329,6 +480,9 @@ def activar_usuario(id):
 
     conexion = conectar()
     cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
 
     cursor.execute(
         """
@@ -344,6 +498,398 @@ def activar_usuario(id):
 
     return "Usuario activado correctamente"
 
+# ==========================================
+# LISTAR ROLES
+# ==========================================
+
+@app.route('/roles')
+def roles():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM rol
+    """)
+
+    roles = cursor.fetchall()
+
+    conexion.close()
+
+    return render_template(
+        'roles.html',
+        roles=roles
+    )
+    
+# ==========================================
+# REGISTRAR ROL
+# ==========================================
+
+@app.route('/registrar_rol', methods=['GET', 'POST'])
+def registrar_rol():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    if request.method == 'POST':
+
+        nombre_rol = request.form['nombre_rol']
+        descripcion = request.form['descripcion']
+
+        cursor.execute("""
+            SELECT *
+            FROM rol
+            WHERE nombre_rol=%s
+        """, (nombre_rol,))
+
+        rol_existente = cursor.fetchone()
+
+        if rol_existente:
+
+            conexion.close()
+
+            return "El rol ya existe"
+
+        cursor.execute("""
+            INSERT INTO rol(nombre_rol, descripcion)
+            VALUES(%s,%s)
+        """, (
+            nombre_rol,
+            descripcion
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Rol registrado correctamente"
+
+    conexion.close()
+
+    return render_template('registrar_rol.html')
+    
+
+# ==========================================
+# EDITAR ROL
+# ==========================================
+
+@app.route('/editar_rol/<int:id>', methods=['GET', 'POST'])
+def editar_rol(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
+
+    if request.method == 'POST':
+
+        nombre_rol = request.form['nombre_rol']
+        descripcion = request.form['descripcion']
+
+        if not nombre_rol or not descripcion:
+            conexion.close()
+            return "Todos los campos son obligatorios"
+        
+        cursor.execute("""
+            SELECT *
+            FROM rol
+            WHERE id_rol=%s
+        """, (id,))
+
+        rol_existente = cursor.fetchone()
+
+        if not rol_existente:
+            conexion.close()
+            return "El rol no existe"
+
+        cursor.execute("""
+            SELECT *
+            FROM rol
+            WHERE nombre_rol=%s
+            AND id_rol<>%s
+        """, (nombre_rol, id))
+
+        rol_duplicado = cursor.fetchone()
+
+        if rol_duplicado:
+            conexion.close()
+            return "Ya existe un rol con ese nombre"
+
+        cursor.execute("""
+            UPDATE rol
+            SET nombre_rol=%s,
+                descripcion=%s
+            WHERE id_rol=%s
+        """, (
+            nombre_rol,
+            descripcion,
+            id
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Rol actualizado correctamente"
+
+    cursor.execute("""
+        SELECT *
+        FROM rol
+        WHERE id_rol=%s
+    """, (id,))
+
+    rol = cursor.fetchone()
+
+    if not rol:
+        conexion.close()
+        return "El rol no existe"
+
+    conexion.close()
+
+    return render_template(
+        'editar_rol.html',
+        rol=rol
+    )
+    
+# ==========================================
+# ELIMINAR ROL
+# ==========================================
+    
+@app.route('/eliminar_rol/<int:id>')
+def eliminar_rol(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
+
+    cursor.execute("""
+        SELECT *
+        FROM rol
+        WHERE id_rol=%s
+    """, (id,))
+
+    rol = cursor.fetchone()
+
+    if not rol:
+
+        conexion.close()
+
+        return "El rol no existe"
+
+    cursor.execute("""
+        SELECT *
+        FROM usuario
+        WHERE id_rol=%s
+    """, (id,))
+
+    usuarios = cursor.fetchone()
+
+    if usuarios:
+
+        conexion.close()
+
+        return "No se puede eliminar el rol porque tiene usuarios asignados"
+
+    cursor.execute("""
+        DELETE FROM rol
+        WHERE id_rol=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return "Rol eliminado correctamente"
+
+# ==========================================
+# ASIGNAR PERMISO
+# ==========================================
+
+@app.route('/asignar_permiso', methods=['GET', 'POST'])
+def asignar_permiso():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+    
+    if not es_admin():
+        return "Acceso denegado"
+
+    if request.method == 'POST':
+
+        id_rol = request.form['id_rol']
+        id_permiso = request.form['id_permiso']
+
+
+        cursor.execute("""
+            SELECT *
+            FROM rol_permiso
+            WHERE id_rol=%s
+            AND id_permiso=%s
+        """, (id_rol, id_permiso))
+
+        permiso_existente = cursor.fetchone()
+
+        if permiso_existente:
+            conexion.close()
+            return "Este permiso ya está asignado al rol"
+
+        cursor.execute("""
+            INSERT INTO rol_permiso(id_rol, id_permiso)
+            VALUES(%s,%s)
+        """, (id_rol, id_permiso))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Permiso asignado correctamente"
+
+
+    cursor.execute("""
+        SELECT *
+        FROM rol
+    """)
+
+    roles = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT *
+        FROM permiso
+    """)
+
+    permisos = cursor.fetchall()
+
+    conexion.close()
+
+    return render_template(
+        'asignar_permiso.html',
+        roles=roles,
+        permisos=permisos
+    )
+   
+# ==========================================
+# REGISTRAR ENTIDADES
+# ==========================================
+   
+@app.route('/registrar_entidad', methods=['GET', 'POST'])
+def registrar_entidad():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    if request.method == 'POST':
+
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        responsable = request.form['responsable']
+
+        if not nombre or not descripcion or not responsable:
+            conexion.close()
+            return "Todos los campos son obligatorios"
+
+        cursor.execute("""
+            SELECT *
+            FROM entidad
+            WHERE nombre=%s
+        """, (nombre,))
+
+        entidad_existente = cursor.fetchone()
+
+        if entidad_existente:
+            conexion.close()
+            return "La entidad ya existe"
+
+        cursor.execute("""
+            INSERT INTO entidad
+            (nombre, descripcion, responsable)
+            VALUES (%s,%s,%s)
+        """, (
+            nombre,
+            descripcion,
+            responsable
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Entidad registrada correctamente"
+
+    conexion.close()
+
+    return render_template(
+        'registrar_entidad.html'
+    )
+   
+# ==========================================
+# REGISTRAR Parametros
+# ==========================================
+   
+@app.route('/registrar_parametro', methods=['GET', 'POST'])
+def registrar_parametro():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    if request.method == 'POST':
+
+        nombre = request.form['nombre']
+        valor = request.form['valor']
+        descripcion = request.form['descripcion']
+        
+        if len(nombre) < 3:
+            conexion.close()
+            return "El nombre debe tener al menos 3 caracteres"
+        
+        if len(valor) < 1:
+            conexion.close()
+            return "Debe ingresar un valor válido"
+
+        if not nombre or not valor or not descripcion:
+
+            conexion.close()
+
+            return "Todos los campos son obligatorios"
+
+        # Validar duplicados
+
+        cursor.execute("""
+            SELECT *
+            FROM parametro_institucional
+            WHERE nombre=%s
+        """, (nombre,))
+
+        parametro_existente = cursor.fetchone()
+
+        if parametro_existente:
+
+            conexion.close()
+
+            return "El parámetro ya existe"
+
+        # Registrar parámetro
+
+        cursor.execute("""
+            INSERT INTO parametro_institucional
+            (nombre, valor, descripcion)
+            VALUES (%s,%s,%s)
+        """, (
+            nombre,
+            valor,
+            descripcion
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Parámetro registrado correctamente"
+
+    conexion.close()
+
+    return render_template(
+        'registrar_parametro.html'
+    )
+   
+   
 # ==========================================
 # EJECUTAR FLASK
 # ==========================================

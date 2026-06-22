@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Asignar Permisos</title>
+</head>
+<body>
+
+<h1>Asignar Permisos</h1>
+
+<form method="POST">
+
+    <label>Rol:</label>
+
+    <select name="id_rol">
+
+        {% for rol in roles %}
+
+        <option value="{{ rol[0] }}">
+            {{ rol[1] }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+    <br><br>
+
+    <label>Permiso:</label>
+
+    <select name="id_permiso">
+
+        {% for permiso in permisos %}
+
+        <option value="{{ permiso[0] }}">
+            {{ permiso[1] }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+    <br><br>
+
+    <button type="submit">
+        Asignar
+    </button>
+
+</form>
+
+</body>
+</html>

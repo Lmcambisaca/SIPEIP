@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Roles</title>
+</head>
+<body>
+
+<h1>Lista de Roles</h1>
+
+<table border="1">
+
+    <tr>
+        <th>ID</th>
+        <th>Rol</th>
+        <th>Descripción</th>
+        <th>Acciones</th>
+    </tr>
+
+    {% for rol in roles %}
+
+    <tr>
+
+        <td>{{ rol[0] }}</td>
+        <td>{{ rol[1] }}</td>
+        <td>{{ rol[2] }}</td>
+
+        <td>
+
+            <a href="/editar_rol/{{ rol[0] }}">
+                Editar
+            </a>
+
+            |
+
+            <a href="/eliminar_rol/{{ rol[0] }}"
+               onclick="return confirm('¿Está seguro de eliminar este rol?')">
+                Eliminar
+            </a>
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+</table>
+
+</body>
+</html>
