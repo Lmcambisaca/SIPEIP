@@ -1024,27 +1024,6 @@ def registrar_parametro():
     )
    
 # ==========================================
-# ACTIVAR ENTIDAD
-# ==========================================   
-   
-@app.route('/activar_entidad/<int:id>')
-def activar_entidad(id):
-
-    conexion = conectar()
-    cursor = conexion.cursor()
-
-    cursor.execute("""
-        UPDATE entidad
-        SET estado='Activo'
-        WHERE id_entidad=%s
-    """, (id,))
-
-    conexion.commit()
-    conexion.close()
-
-    return "Entidad activada"
-   
-# ==========================================
 # EJECUTAR FLASK
 # ==========================================
 
