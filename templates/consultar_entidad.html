@@ -1,0 +1,31 @@
+<h1>Consultar Entidades</h1>
+
+<form method="GET">
+    <input type="text" name="nombre" placeholder="Nombre entidad">
+
+    <select name="estado">
+        <option value="">Todos</option>
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+    </select>
+
+    <button type="submit">Buscar</button>
+</form>
+
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Responsable</th>
+        <th>Estado</th>
+    </tr>
+
+    {% for e in entidades %}
+    <tr>
+        <td>{{ e[1] }}</td>
+        <td>{{ e[2] }}</td>
+        <td>{{ e[3] }}</td>
+        <td>{{ e[4] }}</td>
+    </tr>
+    {% endfor %}
+</table>

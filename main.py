@@ -821,7 +821,141 @@ def registrar_entidad():
     )
    
 # ==========================================
-# REGISTRAR Parametros
+# CONSULTAR ENTIDAD
+# ==========================================
+   
+@app.route('/consultar_entidad')
+def consultar_entidad():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    nombre = request.args.get('nombre', '')
+    estado = request.args.get('estado', '')
+
+    query = "SELECT * FROM entidad WHERE 1=1"
+
+    params = []
+
+    if nombre:
+        query += " AND nombre LIKE %s"
+        params.append(f"%{nombre}%")
+
+    if estado:
+        query += " AND estado=%s"
+        params.append(estado)
+
+    cursor.execute(query, params)
+    entidades = cursor.fetchall()
+
+    conexion.close()
+
+    # TAR-93
+    if not entidades:
+        return "No existen entidades registradas"
+
+    return render_template(
+        'consultar_entidad.html',
+        entidades=entidades
+    )
+# ==========================================
+# EDITAR ENTIDAD
+# ==========================================   
+    
+@app.route('/editar_entidad/<int:id>', methods=['GET', 'POST'])
+def editar_entidad(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM entidad
+        WHERE id_entidad=%s
+    """, (id,))
+
+    entidad = cursor.fetchone()
+
+    # TAR-97
+    if not entidad:
+        conexion.close()
+        return "Entidad no encontrada"
+
+    if request.method == 'POST':
+
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        responsable = request.form['responsable']
+
+        cursor.execute("""
+            UPDATE entidad
+            SET nombre=%s,
+                descripcion=%s,
+                responsable=%s
+            WHERE id_entidad=%s
+        """, (
+            nombre,
+            descripcion,
+            responsable,
+            id
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Entidad actualizada correctamente"
+
+    conexion.close()
+
+    return render_template(
+        'editar_entidad.html',
+        entidad=entidad
+    )
+# ==========================================
+# DESACTIVAR ENTIDAD
+# ==========================================   
+    
+@app.route('/desactivar_entidad/<int:id>')
+def desactivar_entidad(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE entidad
+        SET estado='Inactivo'
+        WHERE id_entidad=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return "Entidad desactivada"
+
+# ==========================================
+# ACTIVAR ENTIDAD
+# ==========================================
+
+@app.route('/activar_entidad/<int:id>')
+def activar_entidad(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE entidad
+        SET estado='Activo'
+        WHERE id_entidad=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return "Entidad activada correctamente"
+
+    
+# ==========================================
+# REGISTRAR PARAMETROS
 # ==========================================
    
 @app.route('/registrar_parametro', methods=['GET', 'POST'])
@@ -889,6 +1023,26 @@ def registrar_parametro():
         'registrar_parametro.html'
     )
    
+# ==========================================
+# ACTIVAR ENTIDAD
+# ==========================================   
+   
+@app.route('/activar_entidad/<int:id>')
+def activar_entidad(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE entidad
+        SET estado='Activo'
+        WHERE id_entidad=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return "Entidad activada"
    
 # ==========================================
 # EJECUTAR FLASK
