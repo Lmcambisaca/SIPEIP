@@ -156,7 +156,7 @@ def login():
             conexion.commit()
             conexion.close()
 
-            return redirect('/')
+            return redirect('/dashboard')
 
         else:
 
@@ -168,6 +168,22 @@ def login():
 
     return render_template('login.html')
 
+# ==========================================
+# Paina principal
+# ==========================================
+
+@app.route('/dashboard')
+def dashboard():
+
+    if 'usuario' not in session:
+        return redirect('/login')
+
+    return render_template(
+        'dashboard.html',
+        usuario=session['usuario'],
+        rol=session['id_rol']
+    )
+    
 # ==========================================
 # cerrar sesion
 # ==========================================
