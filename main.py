@@ -169,7 +169,7 @@ def login():
     return render_template('login.html')
 
 # ==========================================
-# Paina principal
+# Pagina principal
 # ==========================================
 
 @app.route('/dashboard')
@@ -1038,6 +1038,152 @@ def registrar_parametro():
     return render_template(
         'registrar_parametro.html'
     )
+   
+# ==========================================
+# REGISTRAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/registrar_planificacion', methods=['GET', 'POST'])
+def registrar_planificacion():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # Cargar entidades para el combo
+    cursor.execute("""
+    SELECT id_entidad, nombre
+    FROM entidad
+""")
+
+    entidades = cursor.fetchall()
+
+    if request.method == 'POST':
+
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        periodo = request.form['periodo']
+        fecha_inicio = request.form['fecha_inicio']
+        fecha_fin = request.form['fecha_fin']
+        estado = request.form['estado']
+        id_entidad = request.form['id_entidad']
+
+        # ==========================
+        # Validaciones
+        # ==========================
+
+        if not nombre or not descripcion or not periodo or not fecha_inicio or not fecha_fin:
+            conexion.close()
+            return "Todos los campos son obligatorios."
+
+        if fecha_inicio > fecha_fin:
+            conexion.close()
+            return "La fecha de inicio no puede ser mayor que la fecha de fin."
+
+        # ==========================
+        # Registrar planificación
+        # ==========================
+
+        cursor.execute("""
+            INSERT INTO planificacion
+            (nombre, descripcion, periodo, fecha_inicio, fecha_fin, estado, id_entidad)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            nombre,
+            descripcion,
+            periodo,
+            fecha_inicio,
+            fecha_fin,
+            estado,
+            id_entidad
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Planificación registrada correctamente."
+
+    conexion.close()
+
+    return render_template(
+        'registrar_planificacion.html',
+        entidades=entidades
+    )
+
+# ==========================================
+# CONSULTAR PLANIFICACIONES
+# ==========================================
+
+@app.route('/consultar_planificacion')
+def consultar_planificacion():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # Cargar entidades para el filtro
+    cursor.execute("""
+        SELECT id_entidad, nombre
+        FROM entidad
+    """)
+    entidades = cursor.fetchall()
+
+    periodo = request.args.get('periodo', '')
+    estado = request.args.get('estado', '')
+    id_entidad = request.args.get('id_entidad', '')
+
+    consulta = """
+        SELECT
+            p.id_planificacion,
+            p.nombre,
+            p.descripcion,
+            p.periodo,
+            p.fecha_inicio,
+            p.fecha_fin,
+            p.estado,
+            p.id_entidad,
+            e.nombre
+        FROM planificacion p
+        INNER JOIN entidad e
+        ON p.id_entidad = e.id_entidad
+        WHERE 1=1
+    """
+
+    parametros = []
+
+    if periodo:
+        consulta += " AND p.periodo LIKE %s"
+        parametros.append(f"%{periodo}%")
+
+    if estado:
+        consulta += " AND p.estado=%s"
+        parametros.append(estado)
+
+    if id_entidad:
+        consulta += " AND p.id_entidad=%s"
+        parametros.append(id_entidad)
+
+    cursor.execute(consulta, parametros)
+
+    planificaciones = cursor.fetchall()
+
+    conexion.close()
+
+    # TAR-73
+    if not planificaciones:
+        return render_template(
+            'consultar_planificacion.html',
+            planificaciones=[],
+            entidades=entidades,
+            mensaje="No existen planificaciones registradas."
+        )
+
+    return render_template(
+        'consultar_planificacion.html',
+        planificaciones=planificaciones,
+        entidades=entidades,
+        mensaje=""
+    )
+
+
    
 # ==========================================
 # EJECUTAR FLASK

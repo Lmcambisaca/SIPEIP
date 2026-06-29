@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Consultar Planificaciones</title>
+
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+
+</head>
+
+<body class="container mt-5">
+
+<h2>Consultar Planificaciones</h2>
+
+<form method="GET">
+
+    <div class="row">
+
+        <div class="col">
+
+            <input
+                type="text"
+                name="periodo"
+                class="form-control"
+                placeholder="Período"
+                value="{{ request.args.get('periodo','') }}"
+            >
+
+        </div>
+
+        <div class="col">
+
+            <select name="estado" class="form-control">
+
+                <option value="">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En proceso">En proceso</option>
+                <option value="Aprobada">Aprobada</option>
+
+            </select>
+
+        </div>
+
+        <div class="col">
+
+            <select name="id_entidad" class="form-control">
+
+                <option value="">Todas</option>
+
+                {% for entidad in entidades %}
+
+                <option value="{{ entidad[0] }}">
+
+                    {{ entidad[1] }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <div class="col">
+
+            <button class="btn btn-primary">
+
+                Buscar
+
+            </button>
+
+        </div>
+
+    </div>
+
+</form>
+
+{% if mensaje %}
+<div class="alert alert-warning mt-3">
+    {{ mensaje }}
+</div>
+{% endif %}
+
+<hr>
+
+<table class="table table-bordered">
+
+<thead>
+
+<tr>
+
+<th>Nombre</th>
+<th>Periodo</th>
+<th>Estado</th>
+<th>Entidad</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for p in planificaciones %}
+
+<tr>
+
+<td>{{ p[1] }}</td>
+<td>{{ p[3] }}</td>
+<td>{{ p[6] }}</td>
+<td>{{ p[8] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</body>
+
+</html>

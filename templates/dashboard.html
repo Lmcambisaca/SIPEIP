@@ -59,6 +59,8 @@
     Administración
 </div>
 
+
+
 <!-- Usuarios -->
 <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#usuarios">
@@ -80,6 +82,8 @@
         </div>
     </div>
 </li>
+
+
 
 <!-- Roles -->
 <li class="nav-item">
@@ -103,6 +107,7 @@
     </div>
 </li>
 
+
 <!-- Entidades -->
 <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#entidades">
@@ -125,6 +130,7 @@
     </div>
 </li>
 
+
 <!-- Parámetros -->
 <li class="nav-item">
     <a class="nav-link" href="/registrar_parametro">
@@ -135,10 +141,33 @@
 
 <!-- Planificaciones -->
 <li class="nav-item">
-    <a class="nav-link" href="#">
+
+    <a class="nav-link collapsed"
+       href="#"
+       data-toggle="collapse"
+       data-target="#planificaciones">
+
         <i class="fas fa-calendar-alt"></i>
         <span>Planificaciones</span>
+
     </a>
+
+    <div id="planificaciones" class="collapse">
+
+        <div class="bg-white py-2 collapse-inner rounded">
+
+    <a class="collapse-item" href="/registrar_planificacion">
+        Registrar Planificación
+    </a>
+
+    <a class="collapse-item" href="/consultar_planificacion">
+        Consultar Planificaciones
+    </a>
+
+</div>
+
+    </div>
+
 </li>
 
 <hr class="sidebar-divider">
@@ -284,20 +313,6 @@
     <h1 class="h3 mb-4 text-gray-800">
     Panel Principal
 </h1>
-
-<div class="alert alert-primary shadow">
-
-    <h4>
-        Bienvenido, <strong>{{ usuario }}</strong>
-    </h4>
-
-    <hr>
-
-    <p class="mb-0">
-        Sistema Institucional de Planificación e Inversión Pública (SIPeIP)
-    </p>
-
-</div>
 
     <div class="alert alert-primary">
         <h5>Sistema Institucional de Planificación e Inversión Pública</h5>

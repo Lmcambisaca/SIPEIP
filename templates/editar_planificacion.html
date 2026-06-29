@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Editar Planificación</title>
+
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+
+</head>
+
+<body class="container mt-5">
+
+<h2>Editar Planificación</h2>
+
+<form method="POST">
+
+    <div class="mb-3">
+
+        <label>Nombre</label>
+
+        <input
+            type="text"
+            class="form-control"
+            name="nombre"
+            value="{{ planificacion[1] }}"
+        >
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Descripción</label>
+
+        <textarea
+            class="form-control"
+            name="descripcion"
+        >{{ planificacion[2] }}</textarea>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Periodo</label>
+
+        <input
+            type="text"
+            class="form-control"
+            name="periodo"
+            value="{{ planificacion[3] }}"
+        >
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Fecha inicio</label>
+
+        <input
+            type="date"
+            class="form-control"
+            name="fecha_inicio"
+            value="{{ planificacion[4] }}"
+        >
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Fecha fin</label>
+
+        <input
+            type="date"
+            class="form-control"
+            name="fecha_fin"
+            value="{{ planificacion[5] }}"
+        >
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Estado</label>
+
+        <select
+            name="estado"
+            class="form-control"
+        >
+
+            <option {% if planificacion[6]=='Pendiente' %}selected{% endif %}>
+                Pendiente
+            </option>
+
+            <option {% if planificacion[6]=='En proceso' %}selected{% endif %}>
+                En proceso
+            </option>
+
+            <option {% if planificacion[6]=='Aprobada' %}selected{% endif %}>
+                Aprobada
+            </option>
+
+        </select>
+
+    </div>
+
+    <button class="btn btn-success">
+
+        Actualizar
+
+    </button>
+
+</form>
+
+</body>
+
+</html>
