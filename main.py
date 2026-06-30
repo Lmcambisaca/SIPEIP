@@ -1140,7 +1140,9 @@ def consultar_planificacion():
             p.fecha_fin,
             p.estado,
             p.id_entidad,
-            e.nombre
+            e.nombre,
+            p.observacion,
+            p.validacion
         FROM planificacion p
         INNER JOIN entidad e
         ON p.id_entidad = e.id_entidad
@@ -1255,7 +1257,185 @@ def editar_planificacion(id):
         planificacion=planificacion
     )
 
+# ==========================================
+# DESACTIVAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/desactivar_planificacion/<int:id>')
+def desactivar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # TAR-81
+    cursor.execute("""
+        SELECT *
+        FROM planificacion
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    planificacion = cursor.fetchone()
+
+    if not planificacion:
+        conexion.close()
+        return "La planificación no existe."
+
+    # TAR-79 y TAR-80
+    cursor.execute("""
+        UPDATE planificacion
+        SET estado='Inactiva'
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect('/consultar_planificacion')
    
+# ==========================================
+# ACTIVAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/activar_planificacion/<int:id>')
+def activar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE planificacion
+        SET estado='Pendiente'
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect('/consultar_planificacion')
+# ==========================================
+# VALIDAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/validar_planificacion/<int:id>')
+def validar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM planificacion
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    planificacion = cursor.fetchone()
+
+    if not planificacion:
+
+        conexion.close()
+        return "La planificación no existe."
+
+    observacion = ""
+    validacion = "Válida"
+
+    if not planificacion[1]:
+        observacion += "Falta nombre. "
+        validacion = "Con observaciones"
+
+    if not planificacion[2]:
+        observacion += "Falta descripción. "
+        validacion = "Con observaciones"
+
+    if planificacion[4] > planificacion[5]:
+        observacion += "Las fechas son incorrectas. "
+        validacion = "Con observaciones"
+
+    cursor.execute("""
+
+        UPDATE planificacion
+
+        SET
+
+        observacion=%s,
+        validacion=%s
+
+        WHERE id_planificacion=%s
+
+    """, (
+
+        observacion,
+        validacion,
+        id
+
+    ))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect('/consultar_planificacion')
+
+# ==========================================
+# APROBAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/aprobar_planificacion/<int:id>')
+def aprobar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT validacion
+        FROM planificacion
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    resultado = cursor.fetchone()
+
+    if not resultado:
+
+        conexion.close()
+        return "La planificación no existe."
+
+    if resultado[0] != "Válida":
+
+        conexion.close()
+        return "Solo pueden aprobarse planificaciones previamente validadas."
+
+    cursor.execute("""
+        UPDATE planificacion
+        SET estado='Aprobada'
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect('/consultar_planificacion')
+
+# ==========================================
+# RECHAZAR PLANIFICACIÓN
+# ==========================================
+
+@app.route('/rechazar_planificacion/<int:id>')
+def rechazar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        UPDATE planificacion
+        SET
+            estado='Rechazada',
+            observacion='Planificación rechazada por inconsistencias.'
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    conexion.commit()
+    conexion.close()
+
+    return redirect('/consultar_planificacion')
+
 # ==========================================
 # EJECUTAR FLASK
 # ==========================================

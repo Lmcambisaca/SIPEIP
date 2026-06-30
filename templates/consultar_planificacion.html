@@ -37,6 +37,7 @@
                 <option value="Pendiente">Pendiente</option>
                 <option value="En proceso">En proceso</option>
                 <option value="Aprobada">Aprobada</option>
+                <option value="Inactiva">Inactiva</option>
 
             </select>
 
@@ -51,9 +52,7 @@
                 {% for entidad in entidades %}
 
                 <option value="{{ entidad[0] }}">
-
                     {{ entidad[1] }}
-
                 </option>
 
                 {% endfor %}
@@ -65,9 +64,7 @@
         <div class="col">
 
             <button class="btn btn-primary">
-
                 Buscar
-
             </button>
 
         </div>
@@ -77,15 +74,18 @@
 </form>
 
 {% if mensaje %}
+
 <div class="alert alert-warning mt-3">
+
     {{ mensaje }}
+
 </div>
+
 {% endif %}
 
 <hr>
 
-<table class="table table-bordered">
-
+<table class="table table-bordered table-hover">
 
 <thead>
 
@@ -95,12 +95,13 @@
 <th>Periodo</th>
 <th>Estado</th>
 <th>Entidad</th>
+<th>Validación</th>
+<th>Observación</th>
 <th>Acciones</th>
 
 </tr>
 
 </thead>
-
 
 <tbody>
 
@@ -115,12 +116,80 @@
 
 <td>
 
+{% if p[10] == 'Válida' %}
+
+<span class="badge bg-success">
+    Válida
+</span>
+
+{% elif p[10] == 'Con observaciones' %}
+
+<span class="badge bg-warning text-dark">
+    Con observaciones
+</span>
+
+{% else %}
+
+<span class="badge bg-secondary">
+    Pendiente
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ p[9] or '-' }}
+
+</td>
+
+<td>
+
     <a href="/editar_planificacion/{{ p[0] }}"
        class="btn btn-warning btn-sm">
-
         Editar
+    </a>
+
+    <a href="/validar_planificacion/{{ p[0] }}"
+       class="btn btn-info btn-sm">
+        Validar
+    </a>
+
+    <a href="/aprobar_planificacion/{{ p[0] }}"
+   class="btn btn-success btn-sm">
+
+        Aprobar
 
     </a>
+
+    <a href="/rechazar_planificacion/{{ p[0] }}"
+    class="btn btn-secondary btn-sm">
+
+        Rechazar
+
+    </a>
+
+    {% if p[6] == 'Inactiva' %}
+
+    <a href="/activar_planificacion/{{ p[0] }}"
+       class="btn btn-success btn-sm">
+
+        Activar
+
+    </a>
+
+    {% else %}
+
+    <a href="/desactivar_planificacion/{{ p[0] }}"
+       class="btn btn-danger btn-sm"
+       onclick="return confirm('¿Está seguro de desactivar esta planificación?')">
+
+        Desactivar
+
+    </a>
+
+    {% endif %}
 
 </td>
 
