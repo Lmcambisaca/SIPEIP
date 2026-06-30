@@ -12,6 +12,16 @@
     <button type="submit">Buscar</button>
 </form>
 
+{% if mensaje %}
+
+<div class="alert alert-warning mt-3">
+
+    {{ mensaje }}
+
+</div>
+
+{% endif %}
+
 <table border="1">
     <tr>
         <th>Nombre</th>

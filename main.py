@@ -864,16 +864,19 @@ def consultar_entidad():
     cursor.execute(query, params)
     entidades = cursor.fetchall()
 
-    conexion.close()
+    mensaje = ""
 
-    # TAR-93
     if not entidades:
-        return "No existen entidades registradas"
+        mensaje = "No existen entidades registradas."
+
+    conexion.close()
 
     return render_template(
         'consultar_entidad.html',
-        entidades=entidades
+        entidades=entidades,
+        mensaje=mensaje
     )
+
 # ==========================================
 # EDITAR ENTIDAD
 # ==========================================   
@@ -903,6 +906,25 @@ def editar_entidad(id):
         descripcion = request.form['descripcion']
         responsable = request.form['responsable']
 
+        # Validar campos obligatorios
+        if not nombre or not descripcion or not responsable:
+            conexion.close()
+            return "Todos los campos son obligatorios."
+
+        # Verificar nombre duplicado
+        cursor.execute("""
+            SELECT *
+            FROM entidad
+            WHERE nombre=%s
+            AND id_entidad<>%s
+        """, (nombre, id))
+
+        existe = cursor.fetchone()
+
+        if existe:
+            conexion.close()
+            return "Ya existe otra entidad con ese nombre."
+
         cursor.execute("""
             UPDATE entidad
             SET nombre=%s,
@@ -919,7 +941,7 @@ def editar_entidad(id):
         conexion.commit()
         conexion.close()
 
-        return "Entidad actualizada correctamente"
+        return "Entidad actualizada correctamente."
 
     conexion.close()
 
@@ -937,6 +959,34 @@ def desactivar_entidad(id):
     conexion = conectar()
     cursor = conexion.cursor()
 
+    # Verificar que exista la entidad
+    cursor.execute("""
+        SELECT *
+        FROM entidad
+        WHERE id_entidad=%s
+    """, (id,))
+
+    entidad = cursor.fetchone()
+
+    if not entidad:
+        conexion.close()
+        return "La entidad no existe."
+
+    # TAR-101
+    # Verificar si la entidad tiene planificaciones asociadas
+    cursor.execute("""
+        SELECT *
+        FROM planificacion
+        WHERE id_entidad=%s
+    """, (id,))
+
+    planificacion = cursor.fetchone()
+
+    if planificacion:
+        conexion.close()
+        return "No se puede desactivar la entidad porque tiene planificaciones asociadas."
+
+    # Si no tiene dependencias, se desactiva
     cursor.execute("""
         UPDATE entidad
         SET estado='Inactivo'
@@ -946,7 +996,7 @@ def desactivar_entidad(id):
     conexion.commit()
     conexion.close()
 
-    return "Entidad desactivada"
+    return "Entidad desactivada correctamente."
 
 # ==========================================
 # ACTIVAR ENTIDAD
@@ -958,6 +1008,19 @@ def activar_entidad(id):
     conexion = conectar()
     cursor = conexion.cursor()
 
+    # Verificar que exista la entidad
+    cursor.execute("""
+        SELECT *
+        FROM entidad
+        WHERE id_entidad=%s
+    """, (id,))
+
+    entidad = cursor.fetchone()
+
+    if not entidad:
+        conexion.close()
+        return "La entidad no existe."
+
     cursor.execute("""
         UPDATE entidad
         SET estado='Activo'
@@ -967,8 +1030,7 @@ def activar_entidad(id):
     conexion.commit()
     conexion.close()
 
-    return "Entidad activada correctamente"
-
+    return "Entidad activada correctamente."
     
 # ==========================================
 # REGISTRAR PARAMETROS
