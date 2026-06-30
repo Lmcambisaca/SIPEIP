@@ -1182,7 +1182,78 @@ def consultar_planificacion():
         entidades=entidades,
         mensaje=""
     )
+# ==========================================
+# EDITAR PLANIFICACIÓN
+# ==========================================
 
+@app.route('/editar_planificacion/<int:id>', methods=['GET', 'POST'])
+def editar_planificacion(id):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # TAR-77
+    cursor.execute("""
+        SELECT *
+        FROM planificacion
+        WHERE id_planificacion=%s
+    """, (id,))
+
+    planificacion = cursor.fetchone()
+
+    if not planificacion:
+        conexion.close()
+        return "La planificación no existe."
+
+    if request.method == 'POST':
+
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        periodo = request.form['periodo']
+        fecha_inicio = request.form['fecha_inicio']
+        fecha_fin = request.form['fecha_fin']
+        estado = request.form['estado']
+
+        if not nombre or not descripcion or not periodo:
+            conexion.close()
+            return "Todos los campos son obligatorios."
+
+        if fecha_inicio > fecha_fin:
+            conexion.close()
+            return "La fecha de inicio no puede ser mayor que la fecha de fin."
+
+        # TAR-75 y TAR-76
+        cursor.execute("""
+            UPDATE planificacion
+            SET
+                nombre=%s,
+                descripcion=%s,
+                periodo=%s,
+                fecha_inicio=%s,
+                fecha_fin=%s,
+                estado=%s
+            WHERE id_planificacion=%s
+        """, (
+            nombre,
+            descripcion,
+            periodo,
+            fecha_inicio,
+            fecha_fin,
+            estado,
+            id
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Planificación actualizada correctamente."
+
+    conexion.close()
+
+    return render_template(
+        "editar_planificacion.html",
+        planificacion=planificacion
+    )
 
    
 # ==========================================

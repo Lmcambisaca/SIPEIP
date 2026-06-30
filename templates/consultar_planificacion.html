@@ -86,6 +86,7 @@
 
 <table class="table table-bordered">
 
+
 <thead>
 
 <tr>
@@ -94,10 +95,12 @@
 <th>Periodo</th>
 <th>Estado</th>
 <th>Entidad</th>
+<th>Acciones</th>
 
 </tr>
 
 </thead>
+
 
 <tbody>
 
@@ -109,6 +112,17 @@
 <td>{{ p[3] }}</td>
 <td>{{ p[6] }}</td>
 <td>{{ p[8] }}</td>
+
+<td>
+
+    <a href="/editar_planificacion/{{ p[0] }}"
+       class="btn btn-warning btn-sm">
+
+        Editar
+
+    </a>
+
+</td>
 
 </tr>
 
