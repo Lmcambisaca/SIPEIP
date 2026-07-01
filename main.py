@@ -1499,6 +1499,202 @@ def rechazar_planificacion(id):
     return redirect('/consultar_planificacion')
 
 # ==========================================
+# REGISTRAR PROYECTO
+# ==========================================
+
+@app.route('/registrar_proyecto', methods=['GET', 'POST'])
+def registrar_proyecto():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # Obtener planificaciones activas
+    cursor.execute("""
+        SELECT id_planificacion, nombre
+        FROM planificacion
+        WHERE estado <> 'Inactiva'
+    """)
+
+    planificaciones = cursor.fetchall()
+
+    if request.method == 'POST':
+
+        codigo = request.form['codigo']
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        responsable = request.form['responsable']
+        presupuesto = request.form['presupuesto']
+        fecha_inicio = request.form['fecha_inicio']
+        fecha_fin = request.form['fecha_fin']
+        id_planificacion = request.form['id_planificacion']
+
+        # ==================================
+        # TAR-104 y TAR-105
+        # ==================================
+
+        # Campos obligatorios
+        if not codigo or not nombre or not descripcion or not responsable or not presupuesto or not fecha_inicio or not fecha_fin:
+
+            conexion.close()
+            return "Todos los campos son obligatorios."
+
+        # Presupuesto válido
+        if float(presupuesto) <= 0:
+
+            conexion.close()
+            return "El presupuesto debe ser mayor a cero."
+
+        # Validar fechas
+        if fecha_inicio > fecha_fin:
+
+            conexion.close()
+            return "La fecha de inicio no puede ser mayor que la fecha de fin."
+
+        # Código único
+        cursor.execute("""
+            SELECT *
+            FROM proyecto
+            WHERE codigo=%s
+        """, (codigo,))
+
+        proyecto = cursor.fetchone()
+
+        if proyecto:
+
+            conexion.close()
+            return "Ya existe un proyecto con ese código."
+
+        # ==================================
+        # TAR-106
+        # ==================================
+
+        cursor.execute("""
+            SELECT *
+            FROM planificacion
+            WHERE id_planificacion=%s
+        """, (id_planificacion,))
+
+        planificacion = cursor.fetchone()
+
+        if not planificacion:
+
+            conexion.close()
+            return "Debe seleccionar una planificación válida."
+
+        # Registrar proyecto
+        cursor.execute("""
+            INSERT INTO proyecto
+            (
+                codigo,
+                nombre,
+                descripcion,
+                responsable,
+                presupuesto,
+                fecha_inicio,
+                fecha_fin,
+                id_planificacion
+            )
+            VALUES
+            (%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            codigo,
+            nombre,
+            descripcion,
+            responsable,
+            presupuesto,
+            fecha_inicio,
+            fecha_fin,
+            id_planificacion
+        ))
+
+        conexion.commit()
+        conexion.close()
+
+        return "Proyecto registrado correctamente."
+
+    conexion.close()
+
+    return render_template(
+        "registrar_proyecto.html",
+        planificaciones=planificaciones
+    )
+    
+# ==========================================
+# CONSULTAR PROYECTOS
+# ==========================================
+
+@app.route('/consultar_proyecto')
+def consultar_proyecto():
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    nombre = request.args.get('nombre', '')
+    estado = request.args.get('estado', '')
+    id_planificacion = request.args.get('id_planificacion', '')
+
+    query = """
+        SELECT
+            p.*,
+            pl.nombre
+        FROM proyecto p
+        INNER JOIN planificacion pl
+        ON p.id_planificacion = pl.id_planificacion
+        WHERE 1=1
+    """
+
+    parametros = []
+
+    if nombre:
+
+        query += " AND p.nombre LIKE %s"
+        parametros.append(f"%{nombre}%")
+
+    if estado:
+
+        query += " AND p.estado=%s"
+        parametros.append(estado)
+
+    if id_planificacion:
+
+        query += " AND p.id_planificacion=%s"
+        parametros.append(id_planificacion)
+
+    cursor.execute(query, parametros)
+
+    proyectos = cursor.fetchall()
+
+    mensaje = ""
+
+    if not proyectos:
+
+        mensaje = "No existen proyectos registrados."
+
+    cursor.execute("""
+        SELECT
+            id_planificacion,
+            nombre
+        FROM planificacion
+        ORDER BY nombre
+    """)
+
+    planificaciones = cursor.fetchall()
+
+    conexion.close()
+
+    return render_template(
+
+        "consultar_proyecto.html",
+
+        proyectos=proyectos,
+
+        planificaciones=planificaciones,
+
+        mensaje=mensaje
+
+    )
+
+# ==========================================
 # EJECUTAR FLASK
 # ==========================================
 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Consultar Proyectos</title>
+
+    <link href="{{ url_for('static', filename='css/sb-admin-2.min.css') }}" rel="stylesheet">
+
+</head>
+
+<body class="container mt-5">
+
+<h2>Consultar Proyectos</h2>
+
+<form method="GET">
+
+<div class="row">
+
+    <div class="col">
+
+        <input
+            type="text"
+            name="nombre"
+            class="form-control"
+            placeholder="Nombre del proyecto"
+            value="{{ request.args.get('nombre','') }}">
+
+    </div>
+
+    <div class="col">
+
+        <select name="estado" class="form-control">
+
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Aprobada">Aprobada</option>
+            <option value="Rechazada">Rechazada</option>
+            <option value="Inactivo">Inactivo</option>
+
+        </select>
+
+    </div>
+
+    <div class="col">
+
+        <select name="id_planificacion" class="form-control">
+
+            <option value="">Todas</option>
+
+            {% for p in planificaciones %}
+
+            <option value="{{ p[0] }}">
+
+                {{ p[1] }}
+
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+    <div class="col">
+
+        <button class="btn btn-primary">
+
+            Buscar
+
+        </button>
+
+    </div>
+
+</div>
+
+</form>
+
+{% if mensaje %}
+
+<div class="alert alert-warning mt-3">
+
+    {{ mensaje }}
+
+</div>
+
+{% endif %}
+
+<hr>
+
+<table class="table table-bordered table-striped">
+
+<thead>
+
+<tr>
+
+<th>Código</th>
+<th>Nombre</th>
+<th>Responsable</th>
+<th>Presupuesto</th>
+<th>Estado</th>
+<th>Planificación</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for proyecto in proyectos %}
+
+<tr>
+
+<td>{{ proyecto[1] }}</td>
+
+<td>{{ proyecto[2] }}</td>
+
+<td>{{ proyecto[4] }}</td>
+
+<td>${{ proyecto[5] }}</td>
+
+<td>{{ proyecto[8] }}</td>
+
+<td>{{ proyecto[11] }}</td>
+
+<td>
+
+<a
+href="/editar_proyecto/{{ proyecto[0] }}"
+class="btn btn-warning btn-sm">
+
+Editar
+
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</body>
+
+</html>
